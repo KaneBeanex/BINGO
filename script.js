@@ -1,68 +1,72 @@
-/**    
- * BINGO PWA - SCRIPT.JS (SMART CPU UPGRADE)    
- */    
+/** BINGO PWA - FINAL VERSION **/
 
-// --- 1. GLOBAL STATE ---    
-let myBoard = [];    
-let cpuBoard = [];    
-let calledNumbers = new Set();    
-let peer = null;    
-let conn = null;    
-let gameMode = 'CPU';     
-let isMyTurn = true;    
-let amIHost = false;    
+let myBoard = [];
+let cpuBoard = [];
+let calledNumbers = new Set();
 
-const screens = {    
-    menu: document.getElementById('menu-screen'),    
-    lobby: document.getElementById('lobby-screen'),    
-    game: document.getElementById('game-screen')    
-};    
+let gameMode = 'CPU';
+let isMyTurn = true;
 
-// --- 2. UTILITY & GAME LOGIC ---    
+const screens = {
+    menu: document.getElementById('menu-screen'),
+    lobby: document.getElementById('lobby-screen'),
+    game: document.getElementById('game-screen')
+};
 
-function showScreen(screenKey) {    
-    Object.values(screens).forEach(s => s.classList.add('hidden'));    
-    screens[screenKey].classList.remove('hidden');    
-}    
+// --- BASIC UTILS ---
+function showScreen(screenKey) {
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[screenKey].classList.remove('hidden');
+}
 
-function createBoard() {    
-    let nums = Array.from({ length: 25 }, (_, i) => i + 1);    
-    for (let i = nums.length - 1; i > 0; i--) {    
-        const j = Math.floor(Math.random() * (i + 1));    
-        [nums[i], nums[j]] = [nums[j], nums[i]];    
-    }    
-    let board = [];    
-    for (let i = 0; i < 25; i += 5) board.push(nums.slice(i, i + 5));    
-    return board;    
-}    
+function createBoard() {
+    let nums = Array.from({ length: 25 }, (_, i) => i + 1);
+    nums.sort(() => Math.random() - 0.5);
+    let board = [];
+    for (let i = 0; i < 25; i += 5) board.push(nums.slice(i, i + 5));
+    return board;
+}
 
-function countBingos(board, called) {    
-    let lines = 0;    
-    const marked = board.map(row => row.map(v => called.has(v)));    
+// --- RENDER ---
+function renderBoard() {
+    const grid = document.getElementById('bingo-board');
+    grid.innerHTML = '';
 
-    for (let i = 0; i < 5; i++) {    
-        if (marked[i].every(v => v)) lines++;    
-        if (marked.map(r => r[i]).every(v => v)) lines++;    
-    }    
-    if ([0,1,2,3,4].every(i => marked[i][i])) lines++;    
-    if ([0,1,2,3,4].every(i => marked[i][4-i])) lines++;    
-    return lines;    
-}    
+    myBoard.flat().forEach(val => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.textContent = val;
 
-// --- 🧠 SMART CPU ENGINE ---    
+        if (calledNumbers.has(val)) cell.classList.add('marked');
 
+        cell.onclick = () => handleMove(val);
+        grid.appendChild(cell);
+    });
+}
+
+function renderOpponentBoard(board) {
+    const grid = document.getElementById('opponent-board');
+    grid.innerHTML = '';
+
+    board.flat().forEach(val => {
+        const cell = document.createElement('div');
+        cell.className = 'cell opponent';
+
+        if (calledNumbers.has(val)) {
+            cell.classList.add('marked');
+        }
+
+        grid.appendChild(cell);
+    });
+}
+
+// --- SMART CPU ---
 function getAllLines(board) {
     let lines = [];
 
-    // Rows
     for (let i = 0; i < 5; i++) lines.push(board[i]);
+    for (let i = 0; i < 5; i++) lines.push(board.map(r => r[i]));
 
-    // Cols
-    for (let i = 0; i < 5; i++) {
-        lines.push(board.map(r => r[i]));
-    }
-
-    // Diagonals
     lines.push([0,1,2,3,4].map(i => board[i][i]));
     lines.push([0,1,2,3,4].map(i => board[i][4-i]));
 
@@ -76,195 +80,118 @@ function scoreNumber(num, board) {
     for (let line of lines) {
         if (!line.includes(num)) continue;
 
-        let markedCount = line.filter(v => calledNumbers.has(v)).length;
+        let marked = line.filter(v => calledNumbers.has(v)).length;
 
-        // Heuristic weights
-        if (markedCount === 4) score += 100;   // WIN
-        else if (markedCount === 3) score += 10;
-        else if (markedCount === 2) score += 4;
-        else if (markedCount === 1) score += 1;
+        if (marked === 4) score += 100;
+        else if (marked === 3) score += 10;
+        else if (marked === 2) score += 4;
+        else if (marked === 1) score += 1;
     }
-
     return score;
 }
 
 function getBestMove() {
-    let remaining = Array.from({length: 25}, (_, i) => i + 1)
+    let remaining = Array.from({length:25}, (_,i)=>i+1)
         .filter(n => !calledNumbers.has(n));
 
-    let bestScore = -1;
-    let bestMoves = [];
+    let best = [];
+    let max = -1;
 
     for (let num of remaining) {
         let score = scoreNumber(num, cpuBoard);
 
-        if (score > bestScore) {
-            bestScore = score;
-            bestMoves = [num];
-        } else if (score === bestScore) {
-            bestMoves.push(num);
+        if (score > max) {
+            max = score;
+            best = [num];
+        } else if (score === max) {
+            best.push(num);
         }
     }
 
-    // If all scores are 0 → fallback random
-    if (bestScore === 0) {
-        return remaining[Math.floor(Math.random() * remaining.length)];
-    }
-
-    // Choose randomly among best (adds unpredictability)
-    return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    return best[Math.floor(Math.random()*best.length)];
 }
 
-// --- 3. UI RENDERING ---    
+// --- SLASH ---
+function playSlash(type, index) {
+    const grid = document.getElementById('bingo-board');
+    const slash = document.createElement('div');
+    slash.className = 'slash';
 
-function renderBoard() {    
-    const grid = document.getElementById('bingo-board');    
-    grid.innerHTML = '';    
-    myBoard.flat().forEach(val => {    
-        const cell = document.createElement('div');    
-        cell.className = 'cell';    
-        cell.textContent = val;    
-        if (calledNumbers.has(val)) cell.classList.add('marked');    
-        cell.onclick = () => handleMove(val);    
-        grid.appendChild(cell);    
-    });    
-}    
+    if (type === 'row') slash.style.top = `${index * 20}%`;
+    if (type === 'col') {
+        slash.style.transform = 'rotate(90deg)';
+        slash.style.left = `${index * 20}%`;
+    }
+    if (type === 'diag1') slash.style.transform = 'rotate(45deg)';
+    if (type === 'diag2') slash.style.transform = 'rotate(-45deg)';
 
-function updateStats() {    
-    const myLines = countBingos(myBoard, calledNumbers);    
-    document.getElementById('my-lines').textContent = myLines;    
+    grid.appendChild(slash);
+    setTimeout(()=>slash.remove(), 600);
+}
 
-    if (gameMode === 'CPU') {    
-        const cpuLines = countBingos(cpuBoard, calledNumbers);    
-        document.getElementById('opp-lines').textContent = cpuLines;    
+function getCompletedLines(board) {
+    let res = [];
+    let m = board.map(r => r.map(v => calledNumbers.has(v)));
 
-        if (myLines >= 5 && cpuLines >= 5) setTimeout(() => endGame("🤝 It's a TIE!"), 100);    
-        else if (myLines >= 5) setTimeout(() => endGame("🎉 BINGO! YOU WIN!"), 100);    
-        else if (cpuLines >= 5) setTimeout(() => endGame("💀 CPU WINS!"), 100);    
-    }     
-    else if (gameMode === 'PVP') {    
-        if (myLines >= 5) {    
-            if (conn) conn.send({ type: 'WIN' });    
-            setTimeout(() => endGame("🎉 BINGO! YOU WIN!"), 100);    
-        } else {    
-            if (conn) conn.send({ type: 'SYNC_LINES', lines: myLines });    
-        }    
-    }    
-}    
+    for (let i = 0; i < 5; i++) {
+        if (m[i].every(v=>v)) res.push({type:'row', index:i});
+        if (m.map(r=>r[i]).every(v=>v)) res.push({type:'col', index:i});
+    }
 
-// --- 4. MOVE HANDLING ---    
+    if ([0,1,2,3,4].every(i=>m[i][i])) res.push({type:'diag1'});
+    if ([0,1,2,3,4].every(i=>m[i][4-i])) res.push({type:'diag2'});
 
-function handleMove(val) {    
-    if (!isMyTurn || calledNumbers.has(val)) return;    
+    return res;
+}
 
-    calledNumbers.add(val);    
-    renderBoard();    
-    updateStats();    
+// --- GAME ---
+function handleMove(val) {
+    if (!isMyTurn || calledNumbers.has(val)) return;
 
-    if (countBingos(myBoard, calledNumbers) >= 5) return;    
+    calledNumbers.add(val);
+    renderBoard();
+    renderOpponentBoard(cpuBoard);
 
-    if (gameMode === 'PVP' && conn) {    
-        conn.send({ type: 'MOVE', value: val });    
-        setTurn(false);    
-    } else if (gameMode === 'CPU') {    
-        isMyTurn = false;    
-        setTimeout(cpuTurn, 800);    
-    }    
-}    
+    let lines = getCompletedLines(myBoard);
+    lines.forEach(l => playSlash(l.type, l.index));
 
-function setTurn(myTurn) {    
-    isMyTurn = myTurn;    
-    const indicator = document.getElementById('turn-indicator');    
-    indicator.textContent = myTurn ? "Your Turn!" : "CPU Thinking...";    
-    indicator.className = myTurn ? "active-turn" : "waiting";    
-}    
+    if (lines.length >= 5) return endGame("🎉 YOU WIN");
 
-function cpuTurn() {    
-    let pick = getBestMove();    
+    isMyTurn = false;
+    setTimeout(cpuTurn, 700);
+}
 
-    calledNumbers.add(pick);    
-    renderBoard();    
-    updateStats();    
+function cpuTurn() {
+    let move = getBestMove();
+    calledNumbers.add(move);
 
-    if (countBingos(cpuBoard, calledNumbers) < 5) setTurn(true);    
-}    
+    renderBoard();
+    renderOpponentBoard(cpuBoard);
 
-// --- 5. NETWORKING ---    
-// (UNCHANGED)
+    let lines = getCompletedLines(cpuBoard);
+    lines.forEach(l => playSlash(l.type, l.index));
 
-function initPeer() {    
-    peer = new Peer();    
-    peer.on('open', (id) => {    
-        document.getElementById('my-join-code').textContent = id;    
-    });    
+    if (lines.length >= 5) return endGame("💀 CPU WINS");
 
-    peer.on('connection', (connection) => {    
-        conn = connection;    
-        amIHost = true;    
-        setupSocket();    
-    });    
-}    
+    isMyTurn = true;
+}
 
-function setupSocket() {    
-    conn.on('open', () => {    
-        startGame('PVP');    
-    });    
+// --- START ---
+function startGame() {
+    myBoard = createBoard();
+    cpuBoard = createBoard();
+    calledNumbers.clear();
 
-    conn.on('data', (data) => {    
-        if (data.type === 'MOVE') {    
-            calledNumbers.add(data.value);    
-            renderBoard();    
-            updateStats();    
-            setTurn(true);    
-        } else if (data.type === 'SYNC_LINES') {    
-            document.getElementById('opp-lines').textContent = data.lines;    
-        } else if (data.type === 'WIN') {    
-            setTimeout(() => endGame("💀 Opponent got BINGO!"), 100);    
-        }    
-    });    
-}    
+    showScreen('game');
+    renderBoard();
+    renderOpponentBoard(cpuBoard);
+}
 
-function startGame(mode) {    
-    gameMode = mode;    
-    myBoard = createBoard();    
-    calledNumbers.clear();    
+// --- END ---
+function endGame(msg) {
+    alert(msg);
+    location.reload();
+}
 
-    if (mode === 'CPU') {    
-        cpuBoard = createBoard();    
-        document.getElementById('opp-name').textContent = "CPU";    
-        setTurn(true);    
-    } else {    
-        document.getElementById('opp-name').textContent = "Opponent";    
-        setTurn(amIHost);    
-    }    
-
-    showScreen('game');    
-    renderBoard();    
-    updateStats();    
-}    
-
-function endGame(msg) {    
-    alert(msg);    
-    location.reload();     
-}    
-
-// --- 6. EVENTS ---    
-
-document.getElementById('btn-cpu').onclick = () => startGame('CPU');    
-
-document.getElementById('btn-pvp').onclick = () => {    
-    showScreen('lobby');    
-    initPeer();    
-};    
-
-document.getElementById('btn-join').onclick = () => {    
-    const code = document.getElementById('join-code-input').value;    
-    if (!code) return alert("Enter a code!");    
-    document.getElementById('join-status').textContent = "Connecting...";    
-    conn = peer.connect(code);    
-    amIHost = false;    
-    setupSocket();    
-};    
-
-document.getElementById('btn-back-menu').onclick = () => showScreen('menu');    
-document.getElementById('btn-quit').onclick = () => location.reload();
+// --- EVENTS ---
+document.getElementById('btn-cpu').onclick = startGame;
