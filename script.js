@@ -1,51 +1,159 @@
-/** BINGO PWA - FINAL VERSION **/
+/**    
+ * BINGO PWA - SCRIPT.JS (SMART CPU + PSEUDO BOARD + SLASH FX)    
+ */    
 
-let myBoard = [];
-let cpuBoard = [];
-let calledNumbers = new Set();
+// --- 1. GLOBAL STATE ---    
+let myBoard = [];    
+let cpuBoard = [];    
+let calledNumbers = new Set();    
+let peer = null;    
+let conn = null;    
+let gameMode = 'CPU';     
+let isMyTurn = true;    
+let amIHost = false;    
 
-let gameMode = 'CPU';
-let isMyTurn = true;
+const screens = {    
+    menu: document.getElementById('menu-screen'),    
+    lobby: document.getElementById('lobby-screen'),    
+    game: document.getElementById('game-screen')    
+};    
 
-const screens = {
-    menu: document.getElementById('menu-screen'),
-    lobby: document.getElementById('lobby-screen'),
-    game: document.getElementById('game-screen')
-};
+// --- 2. UTILITIES ---    
 
-// --- BASIC UTILS ---
-function showScreen(screenKey) {
-    Object.values(screens).forEach(s => s.classList.add('hidden'));
-    screens[screenKey].classList.remove('hidden');
+function showScreen(screenKey) {    
+    Object.values(screens).forEach(s => s.classList.add('hidden'));    
+    screens[screenKey].classList.remove('hidden');    
+}    
+
+function createBoard() {    
+    let nums = Array.from({ length: 25 }, (_, i) => i + 1);    
+    for (let i = nums.length - 1; i > 0; i--) {    
+        const j = Math.floor(Math.random() * (i + 1));    
+        [nums[i], nums[j]] = [nums[j], nums[i]];    
+    }    
+    let board = [];    
+    for (let i = 0; i < 25; i += 5) board.push(nums.slice(i, i + 5));    
+    return board;    
+}    
+
+function countBingos(board, called) {    
+    let lines = 0;    
+    const marked = board.map(row => row.map(v => called.has(v)));    
+
+    for (let i = 0; i < 5; i++) {    
+        if (marked[i].every(v => v)) lines++;    
+        if (marked.map(r => r[i]).every(v => v)) lines++;    
+    }    
+    if ([0,1,2,3,4].every(i => marked[i][i])) lines++;    
+    if ([0,1,2,3,4].every(i => marked[i][4-i])) lines++;    
+    return lines;    
+}    
+
+// --- 🧠 SMART CPU ---    
+
+function getAllLines(board) {
+    let lines = [];
+    for (let i = 0; i < 5; i++) lines.push(board[i]);
+    for (let i = 0; i < 5; i++) lines.push(board.map(r => r[i]));
+    lines.push([0,1,2,3,4].map(i => board[i][i]));
+    lines.push([0,1,2,3,4].map(i => board[i][4-i]));
+    return lines;
 }
 
-function createBoard() {
-    let nums = Array.from({ length: 25 }, (_, i) => i + 1);
-    nums.sort(() => Math.random() - 0.5);
-    let board = [];
-    for (let i = 0; i < 25; i += 5) board.push(nums.slice(i, i + 5));
-    return board;
+function scoreNumber(num, board) {
+    let lines = getAllLines(board);
+    let score = 0;
+
+    for (let line of lines) {
+        if (!line.includes(num)) continue;
+        let marked = line.filter(v => calledNumbers.has(v)).length;
+
+        if (marked === 4) score += 100;
+        else if (marked === 3) score += 10;
+        else if (marked === 2) score += 4;
+        else if (marked === 1) score += 1;
+    }
+    return score;
 }
 
-// --- RENDER ---
-function renderBoard() {
+function getBestMove() {
+    let remaining = Array.from({length: 25}, (_, i) => i + 1)
+        .filter(n => !calledNumbers.has(n));
+
+    let bestScore = -1;
+    let bestMoves = [];
+
+    for (let num of remaining) {
+        let score = scoreNumber(num, cpuBoard);
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestMoves = [num];
+        } else if (score === bestScore) {
+            bestMoves.push(num);
+        }
+    }
+
+    if (bestScore === 0) {
+        return remaining[Math.floor(Math.random() * remaining.length)];
+    }
+
+    return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+}
+
+// --- ⚔️ SLASH FX ---    
+
+function getCompletedLines(board, called) {
+    const completed = [];
+    const marked = board.map(row => row.map(v => called.has(v)));
+
+    for (let i = 0; i < 5; i++) {
+        if (marked[i].every(v => v)) completed.push({type:'row', index:i});
+        if (marked.map(r => r[i]).every(v => v)) completed.push({type:'col', index:i});
+    }
+
+    if ([0,1,2,3,4].every(i => marked[i][i])) completed.push({type:'diag1'});
+    if ([0,1,2,3,4].every(i => marked[i][4-i])) completed.push({type:'diag2'});
+
+    return completed;
+}
+
+function playSlashAnimation(type, index) {
     const grid = document.getElementById('bingo-board');
-    grid.innerHTML = '';
+    const slash = document.createElement('div');
+    slash.className = 'slash';
 
-    myBoard.flat().forEach(val => {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.textContent = val;
+    if (type === 'row') slash.style.top = `${index * 20}%`;
+    else if (type === 'col') {
+        slash.style.transform = 'rotate(90deg)';
+        slash.style.left = `${index * 20}%`;
+    }
+    else if (type === 'diag1') slash.style.transform = 'rotate(45deg)';
+    else if (type === 'diag2') slash.style.transform = 'rotate(-45deg)';
 
-        if (calledNumbers.has(val)) cell.classList.add('marked');
-
-        cell.onclick = () => handleMove(val);
-        grid.appendChild(cell);
-    });
+    grid.appendChild(slash);
+    setTimeout(() => slash.remove(), 600);
 }
+
+// --- 🎮 RENDER ---    
+
+function renderBoard() {    
+    const grid = document.getElementById('bingo-board');    
+    grid.innerHTML = '';    
+    myBoard.flat().forEach(val => {    
+        const cell = document.createElement('div');    
+        cell.className = 'cell';    
+        cell.textContent = val;    
+        if (calledNumbers.has(val)) cell.classList.add('marked');    
+        cell.onclick = () => handleMove(val);    
+        grid.appendChild(cell);    
+    });    
+}    
 
 function renderOpponentBoard(board) {
     const grid = document.getElementById('opponent-board');
+    if (!grid) return;
+
     grid.innerHTML = '';
 
     board.flat().forEach(val => {
@@ -60,138 +168,147 @@ function renderOpponentBoard(board) {
     });
 }
 
-// --- SMART CPU ---
-function getAllLines(board) {
-    let lines = [];
+// --- 📊 GAME STATE ---    
 
-    for (let i = 0; i < 5; i++) lines.push(board[i]);
-    for (let i = 0; i < 5; i++) lines.push(board.map(r => r[i]));
+function updateStats() {    
+    const myLines = countBingos(myBoard, calledNumbers);    
+    document.getElementById('my-lines').textContent = myLines;    
 
-    lines.push([0,1,2,3,4].map(i => board[i][i]));
-    lines.push([0,1,2,3,4].map(i => board[i][4-i]));
+    const completed = getCompletedLines(myBoard, calledNumbers);
+    completed.forEach(line => playSlashAnimation(line.type, line.index));
 
-    return lines;
+    if (gameMode === 'CPU') {    
+        const cpuLines = countBingos(cpuBoard, calledNumbers);    
+        document.getElementById('opp-lines').textContent = cpuLines;    
+        renderOpponentBoard(cpuBoard);
+
+        if (myLines >= 5 && cpuLines >= 5) setTimeout(() => endGame("🤝 TIE!"), 100);    
+        else if (myLines >= 5) setTimeout(() => endGame("🎉 YOU WIN!"), 100);    
+        else if (cpuLines >= 5) setTimeout(() => endGame("💀 CPU WINS!"), 100);    
+    }     
+    else if (gameMode === 'PVP') {    
+        if (myLines >= 5) {    
+            if (conn) conn.send({ type: 'WIN' });    
+            setTimeout(() => endGame("🎉 YOU WIN!"), 100);    
+        } else {    
+            if (conn) conn.send({ type: 'SYNC_LINES', lines: myLines });    
+        }    
+    }    
+}    
+
+// --- 🎯 MOVES ---    
+
+function handleMove(val) {    
+    if (!isMyTurn || calledNumbers.has(val)) return;    
+
+    calledNumbers.add(val);    
+    renderBoard();    
+    updateStats();    
+
+    if (countBingos(myBoard, calledNumbers) >= 5) return;    
+
+    if (gameMode === 'PVP' && conn) {    
+        conn.send({ type: 'MOVE', value: val });    
+        setTurn(false);    
+    } else {    
+        isMyTurn = false;    
+        setTimeout(cpuTurn, 800);    
+    }    
+}    
+
+function setTurn(myTurn) {    
+    isMyTurn = myTurn;    
+    const indicator = document.getElementById('turn-indicator');    
+    indicator.textContent = myTurn ? "Your Turn!" : "CPU Thinking...";    
+    indicator.className = myTurn ? "active-turn" : "waiting";    
+}    
+
+function cpuTurn() {    
+    let pick = getBestMove();    
+    calledNumbers.add(pick);    
+    renderBoard();    
+    updateStats();    
+
+    if (countBingos(cpuBoard, calledNumbers) < 5) setTurn(true);    
+}    
+
+// --- 🌐 NETWORK ---    
+
+function initPeer() {    
+    peer = new Peer();    
+    peer.on('open', id => {
+        document.getElementById('my-join-code').textContent = id;
+    });
+
+    peer.on('connection', connection => {
+        conn = connection;
+        amIHost = true;
+        setupSocket();
+    });
 }
 
-function scoreNumber(num, board) {
-    let lines = getAllLines(board);
-    let score = 0;
+function setupSocket() {
+    conn.on('open', () => startGame('PVP'));
 
-    for (let line of lines) {
-        if (!line.includes(num)) continue;
-
-        let marked = line.filter(v => calledNumbers.has(v)).length;
-
-        if (marked === 4) score += 100;
-        else if (marked === 3) score += 10;
-        else if (marked === 2) score += 4;
-        else if (marked === 1) score += 1;
-    }
-    return score;
-}
-
-function getBestMove() {
-    let remaining = Array.from({length:25}, (_,i)=>i+1)
-        .filter(n => !calledNumbers.has(n));
-
-    let best = [];
-    let max = -1;
-
-    for (let num of remaining) {
-        let score = scoreNumber(num, cpuBoard);
-
-        if (score > max) {
-            max = score;
-            best = [num];
-        } else if (score === max) {
-            best.push(num);
+    conn.on('data', data => {
+        if (data.type === 'MOVE') {
+            calledNumbers.add(data.value);
+            renderBoard();
+            updateStats();
+            setTurn(true);
         }
-    }
-
-    return best[Math.floor(Math.random()*best.length)];
+        else if (data.type === 'SYNC_LINES') {
+            document.getElementById('opp-lines').textContent = data.lines;
+        }
+        else if (data.type === 'WIN') {
+            setTimeout(() => endGame("💀 You Lose!"), 100);
+        }
+    });
 }
 
-// --- SLASH ---
-function playSlash(type, index) {
-    const grid = document.getElementById('bingo-board');
-    const slash = document.createElement('div');
-    slash.className = 'slash';
+// --- 🚀 START / END ---    
 
-    if (type === 'row') slash.style.top = `${index * 20}%`;
-    if (type === 'col') {
-        slash.style.transform = 'rotate(90deg)';
-        slash.style.left = `${index * 20}%`;
-    }
-    if (type === 'diag1') slash.style.transform = 'rotate(45deg)';
-    if (type === 'diag2') slash.style.transform = 'rotate(-45deg)';
+function startGame(mode) {    
+    gameMode = mode;    
+    myBoard = createBoard();    
+    calledNumbers.clear();    
 
-    grid.appendChild(slash);
-    setTimeout(()=>slash.remove(), 600);
-}
+    if (mode === 'CPU') {    
+        cpuBoard = createBoard();    
+        document.getElementById('opp-name').textContent = "CPU";    
+        renderOpponentBoard(cpuBoard);
+        setTurn(true);    
+    } else {    
+        document.getElementById('opp-name').textContent = "Opponent";    
+        setTurn(amIHost);    
+    }    
 
-function getCompletedLines(board) {
-    let res = [];
-    let m = board.map(r => r.map(v => calledNumbers.has(v)));
+    showScreen('game');    
+    renderBoard();    
+    updateStats();    
+}    
 
-    for (let i = 0; i < 5; i++) {
-        if (m[i].every(v=>v)) res.push({type:'row', index:i});
-        if (m.map(r=>r[i]).every(v=>v)) res.push({type:'col', index:i});
-    }
+function endGame(msg) {    
+    alert(msg);    
+    location.reload();    
+}    
 
-    if ([0,1,2,3,4].every(i=>m[i][i])) res.push({type:'diag1'});
-    if ([0,1,2,3,4].every(i=>m[i][4-i])) res.push({type:'diag2'});
+// --- EVENTS ---    
 
-    return res;
-}
+document.getElementById('btn-cpu').onclick = () => startGame('CPU');    
 
-// --- GAME ---
-function handleMove(val) {
-    if (!isMyTurn || calledNumbers.has(val)) return;
+document.getElementById('btn-pvp').onclick = () => {    
+    showScreen('lobby');    
+    initPeer();    
+};    
 
-    calledNumbers.add(val);
-    renderBoard();
-    renderOpponentBoard(cpuBoard);
+document.getElementById('btn-join').onclick = () => {    
+    const code = document.getElementById('join-code-input').value;    
+    if (!code) return alert("Enter a code!");    
+    conn = peer.connect(code);    
+    amIHost = false;    
+    setupSocket();    
+};    
 
-    let lines = getCompletedLines(myBoard);
-    lines.forEach(l => playSlash(l.type, l.index));
-
-    if (lines.length >= 5) return endGame("🎉 YOU WIN");
-
-    isMyTurn = false;
-    setTimeout(cpuTurn, 700);
-}
-
-function cpuTurn() {
-    let move = getBestMove();
-    calledNumbers.add(move);
-
-    renderBoard();
-    renderOpponentBoard(cpuBoard);
-
-    let lines = getCompletedLines(cpuBoard);
-    lines.forEach(l => playSlash(l.type, l.index));
-
-    if (lines.length >= 5) return endGame("💀 CPU WINS");
-
-    isMyTurn = true;
-}
-
-// --- START ---
-function startGame() {
-    myBoard = createBoard();
-    cpuBoard = createBoard();
-    calledNumbers.clear();
-
-    showScreen('game');
-    renderBoard();
-    renderOpponentBoard(cpuBoard);
-}
-
-// --- END ---
-function endGame(msg) {
-    alert(msg);
-    location.reload();
-}
-
-// --- EVENTS ---
-document.getElementById('btn-cpu').onclick = startGame;
+document.getElementById('btn-back-menu').onclick = () => showScreen('menu');    
+document.getElementById('btn-quit').onclick = () => location.reload();
