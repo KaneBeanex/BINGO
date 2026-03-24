@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bingo in a Blink</title>
     
-    <link rel="manifest" href="./manifest.json">
-    <link rel="icon" sizes="192x192" href="icon-192.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#121212">
-    
+    <link rel="manifest" href="/BINGO/manifest.json">
+    <link rel="icon" sizes="192x192" href="/BINGO/icon-192.png">
+    <link rel="apple-touch-icon" href="/BINGO/icon-192.png">
+    <meta name="theme-color" content="#a3e635">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <link rel="stylesheet" href="style.css"> 
     
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -82,7 +85,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             // ✅ Fix: Use relative path and define the scope explicitly
-            navigator.serviceWorker.register('./sw.js', { scope: '/BINGO/' })
+            navigator.serviceWorker.register('/BINGO/sw.js')
             .then(reg => {
                 // Check for updates
                 if (reg.waiting) {
