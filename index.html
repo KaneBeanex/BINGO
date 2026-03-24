@@ -82,7 +82,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             // ✅ Fix: Use relative path and define the scope explicitly
-            navigator.serviceWorker.register('./sw.js', { scope: './' })
+            navigator.serviceWorker.register('./sw.js', { scope: '/BINGO/' })
             .then(reg => {
                 // Check for updates
                 if (reg.waiting) {
