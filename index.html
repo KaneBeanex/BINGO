@@ -75,48 +75,46 @@
     <script src="script.js"></script>
     
     <script>
-        let newWorker;
-        const updateBanner = document.getElementById('update-banner');
-        const updateBtn = document.getElementById('btn-update');
+    let newWorker;
+    const updateBanner = document.getElementById('update-banner');
+    const updateBtn = document.getElementById('btn-update');
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    
-                    // 1. Check if a worker is already waiting (User missed it last time)
-                    if (reg.waiting) {
-                        newWorker = reg.waiting;
-                        updateBanner.classList.remove('hidden');
-                    }
-
-                    // 2. Listen for new updates downloading
-                    reg.addEventListener('updatefound', () => {
-                        newWorker = reg.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                updateBanner.classList.remove('hidden'); // Show banner!
-                            }
-                        });
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            // ✅ Fix: Use relative path and define the scope explicitly
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
+            .then(reg => {
+                // Check for updates
+                if (reg.waiting) {
+                    newWorker = reg.waiting;
+                    updateBanner.classList.remove('hidden');
+                }
+                reg.addEventListener('updatefound', () => {
+                    newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            updateBanner.classList.remove('hidden');
+                        }
                     });
                 });
+            })
+            .catch(err => console.error("SW Registration failed:", err));
 
-                // 3. Reload the page only once when the new worker takes control
-                let refreshing = false;
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!refreshing) {
-                        window.location.reload();
-                        refreshing = true;
-                    }
-                });
-
-                // 4. Tell the new worker to skip waiting when the user clicks "Update"
-                updateBtn.addEventListener('click', () => {
-                    if (newWorker) {
-                        newWorker.postMessage('SKIP_WAITING');
-                    }
-                });
+            // Reload logic
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    window.location.reload();
+                    refreshing = true;
+                }
             });
-        }
-    </script>
+
+            updateBtn.addEventListener('click', () => {
+                if (newWorker) newWorker.postMessage('SKIP_WAITING');
+            });
+        });
+    }
+</script>
+
 </body>
 </html>
