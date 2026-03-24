@@ -1,15 +1,17 @@
 const CACHE_NAME = 'bingo-v1.0.0.5';
 
 // Use relative paths to ensure they work in GitHub subdirectories
+
 const ASSETS = [
-  './',
-  './index.html',
-  './style.css',
-  './script.js',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  '/BINGO/',
+  '/BINGO/index.html',
+  '/BINGO/style.css',
+  '/BINGO/script.js',
+  '/BINGO/manifest.json',
+  '/BINGO/icon-192.png',
+  '/BINGO/icon-512.png'
 ];
+
 
 // 🟡 INSTALL: Pre-cache all essential assets
 self.addEventListener('install', event => {
