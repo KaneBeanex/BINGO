@@ -1,10 +1,9 @@
 {
   "name": "Bingo in a Blink",
   "short_name": "BINGO!",
-  "start_url": "index.html", 
+  "start_url": "./", 
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "fullscreen"],
   "background_color": "#121212",
   "theme_color": "#bb86fc",
   "description": "Live PvP Bingo game.",
@@ -23,3 +22,4 @@
     }
   ]
 }
+
