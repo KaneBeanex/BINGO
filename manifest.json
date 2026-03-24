@@ -1,0 +1,24 @@
+{
+  "name": "Bingo in a Blink: Mark. Line. Win!",
+  "short_name": "BINGO!",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#a3e635",
+  "description": "A real-time, cross-platform PWA Bingo game featuring a smart CPU opponent and live PvP multiplayer powered by WebRTC for seamless, same-room competitive play.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

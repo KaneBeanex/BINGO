@@ -1,0 +1,144 @@
+/* --- Root Variables & Reset --- */
+:root {
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-primary: #ffffff;
+    --accent-color: #bb86fc; /* Purple */
+    --success-color: #03dac6; /* Teal */
+    --error-color: #cf6679; /* Red */
+    --cell-size: 60px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent; /* Removes blue flash on tap */
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    overflow: hidden; /* Prevent scrolling during gameplay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* --- Screen Management --- */
+.screen {
+    width: 100%;
+    max-width: 500px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    text-align: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- UI Components --- */
+h1 { font-size: 3rem; margin-bottom: 2rem; color: var(--accent-color); }
+
+.card {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+button {
+    background-color: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    margin: 10px 0;
+    transition: transform 0.1s;
+}
+
+button:active { transform: scale(0.95); }
+
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #000;
+    color: #fff;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+/* --- Bingo Grid Logic --- */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 8px;
+    margin: 20px auto;
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Keeps it a perfect square */
+}
+
+.cell {
+    background: var(--card-bg);
+    border: 1px solid #333;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cell.marked {
+    background-color: var(--success-color);
+    color: #000;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+.cell.opponent-marked {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+/* --- Scoreboard & Stats --- */
+.score-board {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+}
+
+.score-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+    padding: 10px 20px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+.line-count {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--success-color);
+}
+
+.status-text {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    color: #888;
+}

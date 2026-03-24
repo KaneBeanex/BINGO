@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bingo in a Blink</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#121212">
+    
+    <link rel="stylesheet" href="style.css"> 
+    
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+    <div id="update-banner" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; background: #bb86fc; color: #000; padding: 10px; text-align: center; z-index: 9999; font-weight: bold;">
+        New version available! <button id="btn-update" style="margin-left: 10px; padding: 5px 10px; background: #000; color: #fff; border: none; border-radius: 4px;">Update Now</button>
+    </div>
+
+    <div id="menu-screen" class="screen active">
+        <h1>🎯 BINGO</h1>
+        <p style="margin-bottom: 20px; color: #aaa;">Mark. Line. Win!</p>
+        <div class="menu-buttons">
+            <button id="btn-cpu">Play vs CPU</button>
+            <button id="btn-pvp">Play vs Friend</button>
+        </div>
+    </div>
+
+    <div id="lobby-screen" class="screen hidden">
+        <h2>Multiplayer Lobby</h2>
+        
+        <div class="card host-section">
+            <h3>Host a Game</h3>
+            <p>Tell your friend to enter this code:</p>
+            <h4 id="my-join-code">Generating...</h4>
+            <p id="host-status" class="status-text">Waiting for connection...</p>
+        </div>
+
+        <div class="divider"><span>OR</span></div>
+
+        <div class="card join-section">
+            <h3>Join a Game</h3>
+            <input type="text" id="join-code-input" placeholder="Enter Friend's Code" autocomplete="off">
+            <button id="btn-join">Connect</button>
+            <p id="join-status" class="status-text"></p>
+        </div>
+
+        <button class="back-btn" id="btn-back-menu">Back to Menu</button>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+        <div class="top-bar">
+            <span id="turn-indicator" class="waiting">Waiting to start...</span>
+        </div>
+        
+        <div class="score-board">
+            <div class="score-card">
+                <span>You</span>
+                <span id="my-lines" class="line-count">0</span>
+            </div>
+            <div class="score-card">
+                <span id="opp-name">Opponent</span>
+                <span id="opp-lines" class="line-count">0</span>
+            </div>
+        </div>
+
+        <div id="bingo-board" class="grid"></div>
+
+        <button class="back-btn" id="btn-quit">Quit Game</button>
+    </div>
+
+    <script src="script.js"></script>
+    
+    <script>
+        let newWorker;
+        const updateBanner = document.getElementById('update-banner');
+        const updateBtn = document.getElementById('btn-update');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    
+                    // 1. Check if a worker is already waiting (User missed it last time)
+                    if (reg.waiting) {
+                        newWorker = reg.waiting;
+                        updateBanner.classList.remove('hidden');
+                    }
+
+                    // 2. Listen for new updates downloading
+                    reg.addEventListener('updatefound', () => {
+                        newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                updateBanner.classList.remove('hidden'); // Show banner!
+                            }
+                        });
+                    });
+                });
+
+                // 3. Reload the page only once when the new worker takes control
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshing) {
+                        window.location.reload();
+                        refreshing = true;
+                    }
+                });
+
+                // 4. Tell the new worker to skip waiting when the user clicks "Update"
+                updateBtn.addEventListener('click', () => {
+                    if (newWorker) {
+                        newWorker.postMessage('SKIP_WAITING');
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
