@@ -109,6 +109,7 @@ input:focus {
 /* --- GRID --- */
 .grid {
     display: grid;
+    position: relative;
     grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin: 20px auto;
@@ -240,21 +241,61 @@ input:focus {
     100% { opacity: 0; }
 }
 
-/* FULL LINE STRIKE */
 .line-strike {
     position: absolute;
     background: linear-gradient(90deg, transparent, #fff, transparent);
-    animation: strikeAnim 0.6s ease-out forwards;
-    z-index: 999;
+    z-index: 10;
+    pointer-events: none;
 }
 
-@keyframes strikeAnim {
-    0% {
-        opacity: 1;
-        transform: scale(0);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(1);
-    }
+/* Horizontal strike */
+.line-strike.row {
+    height: 5px;
+    width: 0%;
+    left: 0;
+    animation: strikeRow 0.5s ease-out forwards;
+}
+
+/* Vertical strike */
+.line-strike.col {
+    width: 4px;
+    height: 0%;
+    top: 0;
+    animation: strikeCol 0.5s ease-out forwards;
+}
+
+/* Diagonals */
+.line-strike.diag1,
+.line-strike.diag2 {
+    height: 4px;
+    width: 0%;
+    top: 50%;
+    left: -20%;
+    transform-origin: left center;
+}
+
+.line-strike.diag1 {
+    transform: rotate(45deg);
+    animation: strikeDiag 0.5s ease-out forwards;
+}
+
+.line-strike.diag2 {
+    transform: rotate(-45deg);
+    animation: strikeDiag 0.5s ease-out forwards;
+}
+
+/* Animations */
+@keyframes strikeRow {
+    from { width: 0%; }
+    to { width: 100%; }
+}
+
+@keyframes strikeCol {
+    from { height: 0%; }
+    to { height: 100%; }
+}
+
+@keyframes strikeDiag {
+    from { width: 0%; }
+    to { width: 140%; }
 }
