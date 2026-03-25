@@ -114,7 +114,6 @@
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/BINGO/sw.js')
             .then(reg => {
-                // Check for updates
                 if (reg.waiting) {
                     newWorker = reg.waiting;
                     updateBanner.classList.remove('hidden');
@@ -130,7 +129,6 @@
             })
             .catch(err => console.error("SW Registration failed:", err));
 
-            // Reload logic
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
@@ -145,6 +143,5 @@
         });
     }
     </script>
-
 </body>
 </html>
