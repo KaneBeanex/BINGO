@@ -10,7 +10,10 @@ let peer = null;
 let conn = null;    
 let gameMode = 'CPU';     
 let isMyTurn = true;    
-let amIHost = false;    
+let amIHost = false;
+let rematchRequested = false;
+let opponentRematch = false;
+let alreadyCompleted = new Set();
 
 const screens = {    
     menu: document.getElementById('menu-screen'),    
@@ -120,19 +123,38 @@ function getCompletedLines(board, called) {
 
 function playSlashAnimation(type, index) {
     const grid = document.getElementById('bingo-board');
-    const slash = document.createElement('div');
-    slash.className = 'slash';
+    const strike = document.createElement('div');
+    strike.className = 'line-strike';
 
-    if (type === 'row') slash.style.top = `${index * 20}%`;
+    const cellSize = grid.offsetWidth / 5;
+
+    if (type === 'row') {
+        strike.style.height = '4px';
+        strike.style.width = '100%';
+        strike.style.top = `${index * cellSize + cellSize/2}px`;
+    } 
     else if (type === 'col') {
-        slash.style.transform = 'rotate(90deg)';
-        slash.style.left = `${index * 20}%`;
+        strike.style.width = '4px';
+        strike.style.height = '100%';
+        strike.style.left = `${index * cellSize + cellSize/2}px`;
+    } 
+    else if (type === 'diag1') {
+        strike.style.width = '140%';
+        strike.style.height = '4px';
+        strike.style.transform = 'rotate(45deg)';
+        strike.style.top = '50%';
+        strike.style.left = '-20%';
+    } 
+    else if (type === 'diag2') {
+        strike.style.width = '140%';
+        strike.style.height = '4px';
+        strike.style.transform = 'rotate(-45deg)';
+        strike.style.top = '50%';
+        strike.style.left = '-20%';
     }
-    else if (type === 'diag1') slash.style.transform = 'rotate(45deg)';
-    else if (type === 'diag2') slash.style.transform = 'rotate(-45deg)';
 
-    grid.appendChild(slash);
-    setTimeout(() => slash.remove(), 600);
+    grid.appendChild(strike);
+    setTimeout(() => strike.remove(), 600);
 }
 
 // --- 🎮 RENDER ---    
@@ -175,7 +197,13 @@ function updateStats() {
     document.getElementById('my-lines').textContent = myLines;    
 
     const completed = getCompletedLines(myBoard, calledNumbers);
-    completed.forEach(line => playSlashAnimation(line.type, line.index));
+    completed.forEach(line => {
+        const key = line.type + '-' + (line.index ?? 'x');
+        if (!alreadyCompleted.has(key)) {
+            alreadyCompleted.add(key);
+            playSlashAnimation(line.type, line.index);
+        }
+});
 
     if (gameMode === 'CPU') {    
         const cpuLines = countBingos(cpuBoard, calledNumbers);    
@@ -264,6 +292,28 @@ function setupSocket() {
             setTimeout(() => endGame("💀 You Lose!"), 100);
         }
     });
+        else if (data.type === 'REMATCH_REQUEST') {
+    opponentRematch = true;
+
+            if (rematchRequested) {
+                startGame('PVP');
+            } else {
+                const accept = confirm("🔁 Opponent wants a rematch!");
+                if (accept) {
+                    rematchRequested = true;
+                    conn.send({ type: 'REMATCH_REQUEST' });
+                    startGame('PVP');
+                } else {
+                    conn.send({ type: 'REMATCH_DECLINE' });
+                    location.reload();
+                }
+            }
+        }
+
+        else if (data.type === 'REMATCH_DECLINE') {
+            alert("Opponent declined rematch.");
+            location.reload();
+        }
 }
 
 // --- 🚀 START / END ---    
@@ -271,7 +321,10 @@ function setupSocket() {
 function startGame(mode) {    
     gameMode = mode;    
     myBoard = createBoard();    
-    calledNumbers.clear();    
+    calledNumbers.clear();
+    alreadyCompleted.clear();
+    rematchRequested = false;
+    opponentRematch = false;
 
     if (mode === 'CPU') {    
         cpuBoard = createBoard();    
@@ -288,11 +341,25 @@ function startGame(mode) {
     updateStats();    
 }    
 
-function endGame(msg) {    
-    alert(msg);    
-    location.reload();    
-}    
+function endGame(msg) {
+    if (gameMode === 'PVP' && conn) {
+        const wantRematch = confirm(msg + "\n\n🔁 Rematch?");
+        
+        if (wantRematch) {
+            rematchRequested = true;
+            conn.send({ type: 'REMATCH_REQUEST' });
 
+            // If opponent already asked → start instantly
+            if (opponentRematch) startGame('PVP');
+        } else {
+            conn.send({ type: 'REMATCH_DECLINE' });
+            location.reload();
+        }
+    } else {
+        alert(msg);
+        location.reload();
+    }
+}
 // --- EVENTS ---    
 
 document.getElementById('btn-cpu').onclick = () => startGame('CPU');    
