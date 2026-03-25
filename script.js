@@ -143,6 +143,7 @@ function playSlashAnimation(type, index) {
         strike.style.height = '4px';
         strike.style.transform = 'rotate(45deg)';
         strike.style.top = '50%';
+        strike.style.transformOrigin = 'center';
         strike.style.left = '-20%';
     } 
     else if (type === 'diag2') {
@@ -150,6 +151,7 @@ function playSlashAnimation(type, index) {
         strike.style.height = '4px';
         strike.style.transform = 'rotate(-45deg)';
         strike.style.top = '50%';
+        strike.style.transformOrigin = 'center';
         strike.style.left = '-20%';
     }
 
@@ -279,21 +281,25 @@ function setupSocket() {
     conn.on('open', () => startGame('PVP'));
 
     conn.on('data', data => {
+
         if (data.type === 'MOVE') {
             calledNumbers.add(data.value);
             renderBoard();
+            renderOpponentBoard(myBoard);
             updateStats();
             setTurn(true);
         }
+
         else if (data.type === 'SYNC_LINES') {
             document.getElementById('opp-lines').textContent = data.lines;
         }
+
         else if (data.type === 'WIN') {
             setTimeout(() => endGame("💀 You Lose!"), 100);
         }
-    });
+
         else if (data.type === 'REMATCH_REQUEST') {
-    opponentRematch = true;
+            opponentRematch = true;
 
             if (rematchRequested) {
                 startGame('PVP');
@@ -314,6 +320,8 @@ function setupSocket() {
             alert("Opponent declined rematch.");
             location.reload();
         }
+
+    });
 }
 
 // --- 🚀 START / END ---    
