@@ -239,3 +239,22 @@ input:focus {
     50% { transform: scaleX(1); }
     100% { opacity: 0; }
 }
+
+/* FULL LINE STRIKE */
+.line-strike {
+    position: absolute;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    animation: strikeAnim 0.6s ease-out forwards;
+    z-index: 999;
+}
+
+@keyframes strikeAnim {
+    0% {
+        opacity: 1;
+        transform: scale(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
