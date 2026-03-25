@@ -1,20 +1,15 @@
 /* --- ROOT & RESET --- */
 :root {
-    --bg: linear-gradient(135deg, #0f172a, #020617);
-    --glass: rgba(255, 255, 255, 0.05);
-    --border: rgba(255, 255, 255, 0.1);
-
-    --accent: #a3e635;   /* neon green */
-    --accent-soft: rgba(163, 230, 53, 0.2);
-
-    --text: #e5e7eb;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #a3e635;
+    --accent-soft: #d9f99d;
+    --text: #f1f5f9;
     --muted: #94a3b8;
-
-    --win: #22c55e;
-    --danger: #ef4444;
+    --danger: #fb7185;
+    --glow: rgba(163, 230, 53, 0.6);
 }
 
-/* RESET */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -23,13 +18,13 @@
 }
 
 body {
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    background: var(--bg);
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(circle at top, #1e293b, #020617);
     color: var(--text);
-    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100vh;
 }
 
 /* --- SCREENS --- */
@@ -43,67 +38,65 @@ body {
     text-align: center;
 }
 
-.hidden { display: none !important; }
+.hidden {
+    display: none !important;
+}
 
 /* --- HEADINGS --- */
 h1 {
     font-size: 3rem;
-    margin-bottom: 1.5rem;
     color: var(--accent);
-    text-shadow: 0 0 15px rgba(163,230,53,0.4);
+    text-shadow: 0 0 15px var(--glow);
+    margin-bottom: 10px;
 }
 
-/* --- GLASS CARD --- */
-.card {
-    background: var(--glass);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-    padding: 1.5rem;
-    border-radius: 16px;
-    margin-bottom: 1rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+h2 {
+    margin-bottom: 10px;
 }
 
 /* --- BUTTONS --- */
 button {
-    background: linear-gradient(135deg, #a3e635, #84cc16);
-    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent-soft));
     border: none;
-    padding: 14px 22px;
+    padding: 14px;
+    margin: 10px 0;
     border-radius: 10px;
-    font-weight: 600;
+    font-weight: bold;
     font-size: 1rem;
     cursor: pointer;
-    margin: 10px 0;
+    color: #020617;
     transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(163,230,53,0.4);
+    box-shadow: 0 0 15px var(--glow);
 }
 
 button:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
 }
 
 /* --- INPUT --- */
 input {
     width: 100%;
     padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: rgba(0,0,0,0.6);
-    color: white;
-    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #020617;
+    color: var(--text);
     text-align: center;
-    font-size: 1.1rem;
-    outline: none;
+    margin-bottom: 10px;
 }
 
-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 10px var(--accent-soft);
+/* --- CARDS --- */
+.card {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
 }
 
 /* --- GRID --- */
@@ -119,140 +112,96 @@ input:focus {
 
 /* --- CELLS --- */
 .cell {
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    background: var(--card);
+    border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
+    font-weight: bold;
     font-size: 1.2rem;
-    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
+    border: 1px solid #334155;
 }
 
-/* Hover effect */
 .cell:hover {
     transform: scale(1.05);
-    border-color: var(--accent);
 }
 
-/* Click feedback */
-.cell:active {
-    transform: scale(0.92);
-}
-
-/* MARKED */
 .cell.marked {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: black;
-    box-shadow: 0 0 15px rgba(34,197,94,0.6);
+    background: var(--accent);
+    color: #020617;
+    box-shadow: 0 0 12px var(--glow);
+}
+
+/* Opponent pseudo board */
+.cell.opponent {
+    background: #020617;
+    border: 1px dashed #475569;
+    color: transparent;
+}
+
+.cell.opponent.marked {
+    background: var(--danger);
+    box-shadow: 0 0 10px rgba(251,113,133,0.7);
 }
 
 /* --- SCOREBOARD --- */
 .score-board {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     margin-bottom: 10px;
 }
 
 .score-card {
-    background: var(--glass);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--border);
-    padding: 12px 20px;
-    border-radius: 12px;
-    min-width: 90px;
+    background: var(--card);
+    padding: 10px 15px;
+    border-radius: 10px;
+    width: 45%;
 }
 
 .line-count {
-    font-size: 1.6rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: bold;
     color: var(--accent);
-}
-
-/* --- STATUS TEXT --- */
-.status-text {
-    font-size: 0.9rem;
-    margin-top: 5px;
-    color: var(--muted);
 }
 
 /* --- TURN INDICATOR --- */
 .active-turn {
     color: var(--accent);
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(163,230,53,0.5);
+    text-shadow: 0 0 10px var(--glow);
 }
 
 .waiting {
     color: var(--muted);
 }
 
-/* --- BACK BUTTON --- */
-.back-btn {
-    margin-top: auto;
-    background: transparent;
+/* --- STATUS TEXT --- */
+.status-text {
     color: var(--muted);
-    border: 1px solid var(--border);
+    font-size: 0.9rem;
 }
 
-.back-btn:hover {
-    color: var(--accent);
-    border-color: var(--accent);
+/* --- RULES SCREEN --- */
+#rules-screen {
+    overflow-y: auto;
+    text-align: left;
 }
 
-/* --- OPPONENT BOARD --- */
-.opponent-grid {
-    opacity: 0.7;
-    transform: scale(0.9);
-    margin-top: 10px;
-}
-
-.cell.opponent {
-    background: rgba(255,255,255,0.05);
-    border: 1px dashed rgba(255,255,255,0.2);
-}
-
-.cell.opponent::after {
-    content: "✖";
-    font-size: 1.5rem;
-    opacity: 0;
-}
-
-.cell.opponent.marked::after {
-    opacity: 1;
-    color: #ef4444;
-}
-
-/* --- SLASH ANIMATION --- */
-.slash {
-    position: absolute;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, #fff, transparent);
-    animation: slashAnim 0.6s ease-out forwards;
-    z-index: 999;
-}
-
-@keyframes slashAnim {
-    0% { transform: scaleX(0); opacity: 1; }
-    50% { transform: scaleX(1); }
-    100% { opacity: 0; }
-}
-
+/* --- ⚔️ STRIKE EFFECT --- */
 .line-strike {
     position: absolute;
     background: linear-gradient(90deg, transparent, #fff, transparent);
     z-index: 10;
     pointer-events: none;
+
     box-shadow: 
-    0 0 10px white,
-    0 0 20px white,
-    0 0 40px rgba(255,255,255,0.6);
+        0 0 10px white,
+        0 0 20px white,
+        0 0 40px rgba(255,255,255,0.6);
 }
 
-/* Horizontal strike */
+/* Row */
 .line-strike.row {
     height: 5px;
     width: 0%;
@@ -260,9 +209,9 @@ input:focus {
     animation: strikeRow 0.5s ease-out forwards;
 }
 
-/* Vertical strike */
+/* Column */
 .line-strike.col {
-    width: 4px;
+    width: 5px;
     height: 0%;
     top: 0;
     animation: strikeCol 0.5s ease-out forwards;
@@ -271,7 +220,7 @@ input:focus {
 /* Diagonals */
 .line-strike.diag1,
 .line-strike.diag2 {
-    height: 4px;
+    height: 5px;
     width: 0%;
     top: 50%;
     left: -20%;
@@ -288,7 +237,7 @@ input:focus {
     animation: strikeDiag 0.5s ease-out forwards;
 }
 
-/* Animations */
+/* --- ANIMATIONS --- */
 @keyframes strikeRow {
     from { width: 0%; }
     to { width: 100%; }
