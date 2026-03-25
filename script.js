@@ -124,40 +124,30 @@ function getCompletedLines(board, called) {
 function playSlashAnimation(type, index) {
     const grid = document.getElementById('bingo-board');
     const strike = document.createElement('div');
-    strike.className = 'line-strike';
 
-    const cellSize = grid.offsetWidth / 5;
+    strike.className = `line-strike ${type}`;
+
+    const style = getComputedStyle(grid);
+    const gap = parseFloat(style.gap) || 0;
+
+    const totalGap = gap * 4; // 4 gaps in 5 cells
+    const cellSize = (grid.offsetWidth - totalGap) / 5;
 
     if (type === 'row') {
-        strike.style.height = '4px';
-        strike.style.width = '100%';
-        strike.style.top = `${index * cellSize + cellSize/2}px`;
+        strike.style.top = `${index * cellSize + cellSize / 2}px`;
     } 
     else if (type === 'col') {
-        strike.style.width = '4px';
-        strike.style.height = '100%';
-        strike.style.left = `${index * cellSize + cellSize/2}px`;
+        strike.style.left = `${index * cellSize + cellSize / 2}px`;
     } 
-    else if (type === 'diag1') {
-        strike.style.width = '140%';
-        strike.style.height = '4px';
-        strike.style.transform = 'rotate(45deg)';
+    else if (type === 'diag1' || type === 'diag2') {
         strike.style.top = '50%';
-        strike.style.transformOrigin = 'center';
-        strike.style.left = '-20%';
-    } 
-    else if (type === 'diag2') {
-        strike.style.width = '140%';
-        strike.style.height = '4px';
-        strike.style.transform = 'rotate(-45deg)';
-        strike.style.top = '50%';
-        strike.style.transformOrigin = 'center';
-        strike.style.left = '-20%';
     }
 
     grid.appendChild(strike);
+
     setTimeout(() => strike.remove(), 600);
 }
+
 
 // --- 🎮 RENDER ---    
 
