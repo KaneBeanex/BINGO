@@ -1,5 +1,4 @@
-/**    
- * BINGO PWA - SCRIPT.JS (SMART CPU + PSEUDO BOARD + SLASH FX)    
+/** * BINGO PWA - SCRIPT.JS (SMART CPU + PSEUDO BOARD + SLASH FX)    
  */    
 
 // --- 1. GLOBAL STATE ---    
@@ -17,7 +16,8 @@ let alreadyCompleted = new Set();
 
 const screens = {    
     menu: document.getElementById('menu-screen'),    
-    lobby: document.getElementById('lobby-screen'),    
+    lobby: document.getElementById('lobby-screen'), 
+    rules: document.getElementById('rules-screen'), // <-- Added this!
     game: document.getElementById('game-screen')    
 };    
 
@@ -342,7 +342,7 @@ function startGame(mode) {
 function endGame(msg) {
     if (gameMode === 'PVP' && conn) {
         const wantRematch = confirm(msg + "\n\n🔁 Rematch?");
-        
+
         if (wantRematch) {
             rematchRequested = true;
             conn.send({ type: 'REMATCH_REQUEST' });
@@ -366,6 +366,10 @@ document.getElementById('btn-pvp').onclick = () => {
     showScreen('lobby');    
     initPeer();    
 };    
+
+// <-- ADDED RULES BUTTONS BELOW -->
+document.getElementById('btn-rules').onclick = () => showScreen('rules');
+document.getElementById('btn-back-menu-from-rules').onclick = () => showScreen('menu');
 
 document.getElementById('btn-join').onclick = () => {    
     const code = document.getElementById('join-code-input').value;    
