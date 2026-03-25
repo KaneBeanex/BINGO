@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bingo-v1.0.1.2';
+const CACHE_NAME = 'bingo-v1.0.1.3';
 
 // Use relative paths to ensure they work in GitHub subdirectories
 
