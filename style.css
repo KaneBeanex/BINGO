@@ -176,6 +176,26 @@ input {
 }
 
 
+/* --- SCOREBOARD --- */
+.score-board {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.score-card {
+    background: var(--card);
+    padding: 10px 15px;
+    border-radius: 10px;
+    width: 45%;
+}
+
+.line-count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
+}
+
 /* --- TURN INDICATOR --- */
 .active-turn {
     color: var(--accent);
