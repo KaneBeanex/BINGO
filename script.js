@@ -13,6 +13,7 @@ let amIHost = false;
 let rematchRequested = false;
 let opponentRematch = false;
 let alreadyCompleted = new Set();
+let opponentLines = 0;
 
 const screens = {    
     menu: document.getElementById('menu-screen'),    
@@ -197,15 +198,27 @@ function updateStats() {
         }
 });
 
-    if (gameMode === 'CPU') {    
-        const cpuLines = countBingos(cpuBoard, calledNumbers);    
-        document.getElementById('opp-lines').textContent = cpuLines;    
-        renderOpponentBoard(cpuBoard);
+    if (gameMode === 'CPU') {
+    const cpuLines = countBingos(cpuBoard, calledNumbers);
 
-        if (myLines >= 5 && cpuLines >= 5) setTimeout(() => endGame("🤝 TIE!"), 100);    
-        else if (myLines >= 5) setTimeout(() => endGame("🎉 YOU WIN!"), 100);    
-        else if (cpuLines >= 5) setTimeout(() => endGame("💀 CPU WINS!"), 100);    
-    }     
+    document.getElementById('opp-lines').textContent = cpuLines;
+    renderOpponentBoard(cpuBoard);
+
+    if (myLines >= 5 && cpuLines >= 5) {
+        if (myLines > cpuLines)
+            setTimeout(() => endGame("🎉 YOU WIN!"), 100);
+        else if (cpuLines > myLines)
+            setTimeout(() => endGame("💀 CPU WINS!"), 100);
+        else
+            setTimeout(() => endGame("🤝 TIE!"), 100);
+    }
+    else if (myLines >= 5) {
+        setTimeout(() => endGame("🎉 YOU WIN!"), 100);
+    }
+    else if (cpuLines >= 5) {
+        setTimeout(() => endGame("💀 CPU WINS!"), 100);
+    }
+}     
     else if (gameMode === 'PVP') {    
         if (myLines >= 5) {    
             if (conn) conn.send({ type: 'WIN' });    
@@ -267,51 +280,62 @@ function initPeer() {
     });
 }
 
-function setupSocket() {
-    conn.on('open', () => startGame('PVP'));
+function setupSocket() {  
+    conn.on('open', () => startGame('PVP'));  
+  
+    conn.on('data', data => {  
+  
+        if (data.type === 'MOVE') {  
+            calledNumbers.add(data.value);  
+            renderBoard();  
+            renderOpponentBoard(myBoard);  
+            updateStats();  
+            setTurn(true);  
+        }  
+  
+        else if (data.type === 'SYNC_LINES') {  
+            opponentLines = data.lines; // 🔥 STORE IT
+            document.getElementById('opp-lines').textContent = data.lines;  
+        }  
 
-    conn.on('data', data => {
-
-        if (data.type === 'MOVE') {
-            calledNumbers.add(data.value);
-            renderBoard();
-            renderOpponentBoard(myBoard);
-            updateStats();
-            setTurn(true);
+        // 🔥 NEW: opponent is asking your final score
+        else if (data.type === 'CHECK_OPPONENT') {
+            conn.send({ type: 'FINAL_LINES', lines: myLines });
         }
 
-        else if (data.type === 'SYNC_LINES') {
-            document.getElementById('opp-lines').textContent = data.lines;
+        // 🔥 NEW: opponent sent final score
+        else if (data.type === 'FINAL_LINES') {
+            opponentLines = data.lines;
         }
-
-        else if (data.type === 'WIN') {
-            setTimeout(() => endGame("💀 You Lose!"), 100);
-        }
-
-        else if (data.type === 'REMATCH_REQUEST') {
-            opponentRematch = true;
-
-            if (rematchRequested) {
-                startGame('PVP');
-            } else {
-                const accept = confirm("🔁 Opponent wants a rematch!");
-                if (accept) {
-                    rematchRequested = true;
-                    conn.send({ type: 'REMATCH_REQUEST' });
-                    startGame('PVP');
-                } else {
-                    conn.send({ type: 'REMATCH_DECLINE' });
-                    location.reload();
-                }
-            }
-        }
-
-        else if (data.type === 'REMATCH_DECLINE') {
-            alert("Opponent declined rematch.");
-            location.reload();
-        }
-
-    });
+  
+        else if (data.type === 'WIN') {  
+            setTimeout(() => endGame("💀 You Lose!"), 100);  
+        }  
+  
+        else if (data.type === 'REMATCH_REQUEST') {  
+            opponentRematch = true;  
+  
+            if (rematchRequested) {  
+                startGame('PVP');  
+            } else {  
+                const accept = confirm("🔁 Opponent wants a rematch!");  
+                if (accept) {  
+                    rematchRequested = true;  
+                    conn.send({ type: 'REMATCH_REQUEST' });  
+                    startGame('PVP');  
+                } else {  
+                    conn.send({ type: 'REMATCH_DECLINE' });  
+                    location.reload();  
+                }  
+            }  
+        }  
+  
+        else if (data.type === 'REMATCH_DECLINE') {  
+            alert("Opponent declined rematch.");  
+            location.reload();  
+        }  
+  
+    });  
 }
 
 // --- 🚀 START / END ---    
