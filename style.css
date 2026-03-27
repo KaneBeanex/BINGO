@@ -1,6 +1,7 @@
 /* --- ROOT & RESET --- */
 :root {
-    --bg: #0f172a;
+    --bg: #020617;
+    --bg-soft: #1e293b;
     --card: #1e293b;
     --accent: #a3e635;
     --accent-soft: #d9f99d;
@@ -17,28 +18,30 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+/* 🔥 FIX: background consistency */
 body {
     font-family: 'Segoe UI', Roboto, sans-serif;
-    background: radial-gradient(circle at top, #1e293b, #020617);
+    background: radial-gradient(circle at top, var(--bg-soft), var(--bg));
     color: var(--text);
+
+    min-height: 100vh; /* FIX instead of height */
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
 }
 
 /* --- SCREENS --- */
 .screen {
     width: 100%;
     max-width: 500px;
-    height: 100%;
+    min-height: 100vh; /* 🔥 ensures full coverage */
 
-    margin: 0 auto; /* 🔥 ADD THIS */
-
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    align-items: center; /* 🔥 ADD THIS */
+    align-items: center;
 }
+
 .hidden {
     display: none !important;
 }
@@ -57,8 +60,8 @@ h2 {
 
 /* --- BUTTONS --- */
 button {
-    width: 100%;          /* 🔥 ADD THIS */
-    max-width: 300px;     /* 🔥 ADD THIS */
+    width: 100%;
+    max-width: 300px;
 
     background: linear-gradient(135deg, var(--accent), var(--accent-soft));
     border: none;
@@ -72,6 +75,11 @@ button {
     transition: all 0.2s ease;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
+
+button:hover {
+    transform: translateY(-2px);
+}
+
 .menu-buttons {
     display: flex;
     flex-direction: column;
@@ -84,7 +92,7 @@ input {
     padding: 12px;
     border-radius: 8px;
     border: 1px solid #334155;
-    background: #020617;
+    background: var(--bg);
     color: var(--text);
     text-align: center;
     margin-bottom: 10px;
@@ -97,6 +105,28 @@ input {
     border-radius: 12px;
     margin-bottom: 12px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+}
+
+/* --- SCOREBOARD (from new CSS) --- */
+.score-board {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.score-card {
+    background: var(--card);
+    padding: 10px 15px;
+    border-radius: 10px;
+    width: 48%;
+    text-align: center;
+}
+
+.line-count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
 }
 
 /* --- GRID --- */
@@ -134,26 +164,23 @@ input {
     box-shadow: 0 0 12px var(--glow);
 }
 
-/* Opponent board container */
+/* --- OPPONENT GRID --- */
 .opponent-grid {
     margin-top: 10px;
-    background: rgba(2, 6, 23, 0.95); /* replaces opacity */
+    background: rgba(2, 6, 23, 0.95);
     padding: 10px;
     border-radius: 12px;
 }
 
-/* Base cell */
+/* Opponent cell */
 .cell.opponent {
-    background: #020617;
+    background: var(--bg);
     border: 1px dashed #475569;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: transparent; /* hide numbers */
+    color: transparent;
 }
 
-/* X mark */
+/* X mark animation */
 .cell.opponent::after {
     content: "✖";
     font-size: 1.4rem;
@@ -165,7 +192,6 @@ input {
     transition: all 0.2s ease;
 }
 
-/* Marked state */
 .cell.opponent.marked {
     box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }
@@ -173,27 +199,6 @@ input {
 .cell.opponent.marked::after {
     opacity: 1;
     transform: scale(1);
-}
-
-
-/* --- SCOREBOARD --- */
-.score-board {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-.score-card {
-    background: var(--card);
-    padding: 10px 15px;
-    border-radius: 10px;
-    width: 45%;
-}
-
-.line-count {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--accent);
 }
 
 /* --- TURN INDICATOR --- */
@@ -212,13 +217,13 @@ input {
     font-size: 0.9rem;
 }
 
-/* --- RULES SCREEN --- */
+/* --- RULES --- */
 #rules-screen {
     overflow-y: auto;
     text-align: left;
 }
 
-/* --- ⚔️ STRIKE EFFECT --- */
+/* --- STRIKE EFFECT --- */
 .line-strike {
     position: absolute;
     background: linear-gradient(90deg, transparent, #fff, transparent);
@@ -231,7 +236,6 @@ input {
         0 0 40px rgba(255,255,255,0.6);
 }
 
-/* Row */
 .line-strike.row {
     height: 5px;
     width: 0%;
@@ -239,7 +243,6 @@ input {
     animation: strikeRow 0.5s ease-out forwards;
 }
 
-/* Column */
 .line-strike.col {
     width: 5px;
     height: 0%;
@@ -247,7 +250,6 @@ input {
     animation: strikeCol 0.5s ease-out forwards;
 }
 
-/* Diagonals */
 .line-strike.diag1,
 .line-strike.diag2 {
     height: 5px;
@@ -269,16 +271,13 @@ input {
 
 /* --- ANIMATIONS --- */
 @keyframes strikeRow {
-    from { width: 0%; }
     to { width: 100%; }
 }
 
 @keyframes strikeCol {
-    from { height: 0%; }
     to { height: 100%; }
 }
 
 @keyframes strikeDiag {
-    from { width: 0%; }
     to { width: 140%; }
 }
